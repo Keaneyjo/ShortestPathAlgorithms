@@ -1,0 +1,183 @@
+/*
+ * A Contest to Meet (ACM) is a reality TV contest that sets three contestants at three random
+ * city intersections. In order to win, the three contestants need all to meet at any intersection
+ * of the city as fast as possible.
+ * It should be clear that the contestants may arrive at the intersections at different times, in
+ * which case, the first to arrive can wait until the others arrive.
+ * From an estimated walking speed for each one of the three contestants, ACM wants to determine the
+ * minimum time that a live TV broadcast should last to cover their journey regardless of the contestantsâ€™
+ * initial positions and the intersection they finally meet. You are hired to help ACM answer this question.
+ * You may assume the following:
+ *    ï‚· Each contestant walks at a given estimated speed.
+ *    ï‚· The city is a collection of intersections in which some pairs are connected by one-way
+ * streets that the contestants can use to traverse the city.
+ *
+ * This class implements the competition using Floyd-Warshall algorithm
+ */
+//-------------------------------------------------------------------------
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+
+/**
+ *  Test class for SortComparison.java
+ *
+ *  @author: John Keaney (keaneyjo@tcd.ie)
+ *  Student ID: 18328855
+ *  @version HT 2020
+ */
+
+public class CompetitionFloydWarshall {
+
+    /**
+     * @param filename: A filename containing the details of the city road network
+     * @param sA, sB, sC: speeds for 3 contestants
+     */
+    HashMap<Integer, HashMap<Integer, Double>> graph;
+    int noOfVectices;
+    int noOfStreets;
+    String graphString;
+    double slowest;
+    int sA;
+    int sB;
+    int sC;
+    String filename;
+
+    CompetitionFloydWarshall(String filename, int sA, int sB, int sC) {
+        this.graph = new HashMap<Integer, HashMap<Integer, Double>>();
+        //read file
+        //filename = readFile(filename);
+
+        //create graph
+
+        this.filename = filename;
+
+        //create a String of Graph for later checking
+        //this.graphString = convertToString(graph);
+        double slowest = Math.min(Math.min(sA, sB), Math.min(sA, sC));
+        this.sA = sA;
+        this.sB = sB;
+        this.sC = sC;
+        this.slowest = slowest / 1000;
+    }
+
+    int numberOfVertices(String filename) {
+        HashMap<Integer, HashMap<Integer, Double>> graph = this.graph;
+        String thisLine = null;
+        BufferedReader br;
+        int i = 0;
+        if(filename != null) {
+            try {
+                br = new BufferedReader(new FileReader(filename));
+                while ((thisLine = br.readLine()) != null) {
+                    String[] split = thisLine.trim().split("\\s+");
+                    this.noOfVectices = Integer.parseInt(split[0]);
+                    return (Integer.parseInt(split[0]));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return 0;
+    }
+
+
+
+    /**
+     * @return int: minimum minutes that will pass before the three contestants can meet
+     */
+    public int timeRequiredforCompetition() {
+
+        //String[] StrOfStreets = (filename.split("\n", 0));
+        HashMap<Integer, Double> test = null;
+
+        if(this.filename != null) {
+
+            if (graph != null) {
+                HashMap<Integer, Double> inner;
+                String thisLine = null;
+                BufferedReader br;
+                int i = 0;
+                try {
+                    br = new BufferedReader(new FileReader(filename));
+                    while ((thisLine = br.readLine()) != null) {
+                        if (i > 1) {
+                            String[] split = thisLine.trim().split("\\s+");
+
+                            //                    graph.addIntersection(Integer.parseInt(split[0]),
+                            //                            Integer.parseInt(split[1]),
+                            //                            Double.parseDouble(split[2]));
+                            if (graph.get(Integer.parseInt(split[0])) == null) {
+                                inner = new HashMap<Integer, Double>();
+                                inner.put((Integer.parseInt(split[0])), 0.0);
+                            } else {
+                                inner = graph.get((Integer.parseInt(split[0])));
+                            }
+                            inner.put(Integer.parseInt(split[1]), Double.parseDouble(split[2]));
+                            graph.put(Integer.parseInt(split[0]), inner);
+                        }
+                        i++;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            } else
+                return -1;
+        }
+        else return -1;
+
+        this.noOfVectices = numberOfVertices(filename);
+        if (this.slowest <= 0 || (this.sA < 50 || this.sB < 50 || this.sC < 50) || (this.sA > 100 || this.sB > 100 || this.sC > 100)) {
+            return -1;
+        }
+        HashMap<Integer, HashMap<Integer, Double>> graph = this.graph;
+        if (graph != null) {
+
+            double dist[][] = new double[this.noOfVectices][this.noOfVectices];
+            int i, j, k;
+
+            for (Integer key1 : graph.keySet()) {
+                HashMap<Integer, Double> check = graph.get(key1);
+                for (Integer key2: check.keySet()) {
+                    dist[key1][key2] = graph.get(key1).get(key2);
+                }
+            }
+
+            for (i = 0; i < this.noOfVectices; i++) {
+                for (j = 0; j < this.noOfVectices; j++) {
+                    if (graph.get(i).get(j) == null) {
+                        dist[i][j] = Double.MAX_VALUE;
+                    } else {
+                        dist[i][j] = graph.get(i).get(j);
+                    }
+                }
+            }
+
+            for (k = 0; k < this.noOfVectices; k++) {
+                for (i = 0; i < this.noOfVectices; i++) {
+                    for (j = 0; j < this.noOfVectices; j++) {
+                        if (dist[i][k] + dist[k][j] < dist[i][j])
+                            dist[i][j] = dist[i][k] + dist[k][j];
+                    }
+                }
+            }
+
+            double longest = 0;
+            for (i = 0; i < this.noOfVectices; i++) {
+                for (j = 0; j < this.noOfVectices; j++) {
+                    if (dist[i][j] != Double.MAX_VALUE) {
+                        if (dist[i][j] >= longest) {
+                            longest = dist[i][j];
+                        }
+                    }
+                }
+            }
+            return (int) Math.ceil(longest / this.slowest);
+        }
+        else return -1;
+    }
+}

@@ -1,0 +1,227 @@
+/*
+ * A Contest to Meet (ACM) is a reality TV contest that sets three contestants at three random
+ * city intersections. In order to win, the three contestants need all to meet at any intersection
+ * of the city as fast as possible.
+ * It should be clear that the contestants may arrive at the intersections at different times, in
+ * which case, the first to arrive can wait until the others arrive.
+ * From an estimated walking speed for each one of the three contestants, ACM wants to determine the
+ * minimum time that a live TV broadcast should last to cover their journey regardless of the contestantsâ€™
+ * initial positions and the intersection they finally meet. You are hired to help ACM answer this question.
+ * You may assume the following:
+ *    ï‚· Each contestant walks at a given estimated speed.
+ *    ï‚· The city is a collection of intersections in which some pairs are connected by one-way
+ * streets that the contestants can use to traverse the city.
+ *
+ * This class implements the competition using Dijkstra's algorithm
+ */
+//-------------------------------------------------------------------------
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.sql.SQLOutput;
+import java.util.HashMap;
+import java.util.Collections;
+
+/**
+ *  Test class for SortComparison.java
+ *
+ *  @author: John Keaney (keaneyjo@tcd.ie)
+ *  Student ID: 18328855
+ *  @version HT 2020
+ */
+
+public class CompetitionDijkstra {
+
+    /**
+     * @param filename: A filename containing the details of the city road network
+     * @param sA, sB, sC: speeds for 3 contestants
+     */
+
+    HashMap<Integer, HashMap<Integer, Double>> graph;
+    int noOfVectors;
+    int noOfStreets;
+    String graphString;
+    double slowest;
+    double sA;
+    double sB;
+    double sC;
+    String filename;
+
+    CompetitionDijkstra(String filename, int sA, int sB, int sC) {
+        this.graph = new HashMap<Integer, HashMap<Integer, Double>>();
+        //read file
+        //filename = readFile(filename);
+
+        //create graph
+        this.filename = filename;
+        //create a String of Graph for later checking
+        //this.graphString = convertToString(graph);
+        double slowest = Math.min(Math.min(sA, sB), Math.min(sA, sC));
+        this.sA = sA;
+        this.sB = sB;
+        this.sC = sC;
+
+        this.slowest = slowest / 1000;
+    }
+
+//    String convertToString(HashMap<Integer, HashMap<Integer, Double>> graph) {
+//        //[{0={2=0.26, 4=0.38}, 1={3=0.29}, 2={7=0.34}, 3={6=0.52}, 4={5=0.35, 7=0.37}, 5={1=0.32, 4=0.35, 7=0.28}, 6={0=0.58, 2=0.4, 4=0.93}, 7={3=0.39, 5=0.28}}]
+//        String result = "[{";
+//        for (HashMap.Entry<Integer, HashMap<Integer, Double>> entry : graph.entrySet()) {
+//            result = result + entry.getKey() + "=" + entry.getValue() + ", ";
+//        }
+//        result = result.substring(0, result.toCharArray().length - 2) + "}]";
+//
+//        return result;
+//    }
+
+
+    /**
+     * @return int: minimum minutes that will pass before the three contestants can meet
+     */
+    int timeRequiredforCompetition() {
+        //String[] StrOfStreets = (filename.split("\n", 0));
+        HashMap<Integer, HashMap<Integer, Double>> graph = this.graph;
+        String filename = this.filename;
+        HashMap<Integer, Boolean> visited = new HashMap<Integer, Boolean>();   //Boolean sptSet[] = new Boolean[V];
+
+        double result = 0;
+        if(filename != null) {
+            HashMap<Integer, Double> inner;
+            String thisLine = null;
+            BufferedReader br;
+            int i = 0;
+            try {
+                br = new BufferedReader(new FileReader(filename));
+                while ((thisLine = br.readLine()) != null) {
+                    if (i > 1) {
+                        String[] split = thisLine.trim().split("\\s+");
+
+                        //                    graph.addIntersection(Integer.parseInt(split[0]),
+                        //                            Integer.parseInt(split[1]),
+                        //                            Double.parseDouble(split[2]));
+                        if (graph.get(Integer.parseInt(split[0])) == null) {
+                            inner = new HashMap<Integer, Double>();
+                            inner.put((Integer.parseInt(split[0])), 0.0);
+                        } else {
+                            inner = graph.get((Integer.parseInt(split[0])));
+                        }
+                        inner.put(Integer.parseInt(split[1]), Double.parseDouble(split[2]));
+                        graph.put(Integer.parseInt(split[0]), inner);
+                        visited.put(Integer.parseInt(split[0]) ,false);
+                        visited.put(Integer.parseInt(split[1]) ,false);
+                    }
+                    i++;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            this.graph = graph;
+        }
+        else {
+            return -1;
+        }
+
+
+
+
+        if((this.sA < 50||this.sB < 50||this.sC < 50) || (this.sA > 100||this.sB > 100||this.sC > 100) )
+        {
+            return -1;
+        }
+        graph = this.graph;
+        if(graph != null) {
+
+            double theLongestTime = 0;
+            HashMap<Integer, Double> theLongestTimeArray = new HashMap<Integer, Double>();
+            HashMap<Integer, Double> inner;
+            HashMap<Integer, Double> other;
+            HashMap<Integer, Double> distances = new HashMap<Integer, Double>();  //Boolean sptSet[] = new Boolean[V];
+            // Iterating over keys only
+
+            for (Integer key : graph.keySet()) {    //Each Key here is our starting point
+            //System.out.println("Key = " + key);
+
+            /*
+            1. Mark your selected initial node with a current distance of 0 and the rest with infinity.
+             */
+
+                for (Integer smallSet : graph.keySet()) {    //Set Smallest Distance
+                    //System.out.println("Key = " + key);
+                    distances.put(smallSet, Double.MAX_VALUE);
+                    visited.put(smallSet, false);
+                }
+                distances.put(key, 0.0);
+
+
+                //////////////////////////////////////////////
+            /*
+            2. Set the non-visited node with the smallest current distance as the current node C.
+            */
+
+                for (Integer count : graph.keySet()) {    //Set Smallest Distance
+                    //System.out.println("Key = " + key);
+                    inner = graph.get(count);
+                    Integer u = minimumDistance(distances, visited, graph);
+                    other = graph.get(u);
+                    visited.put(u, true);
+
+                    for (Integer v : graph.keySet()) {
+                        if (other.get(v) != null) {
+                            if (!visited.get(v) && other.get(v) != 0 && distances.get(u) != Double.MAX_VALUE && distances.get(u) + other.get(v) < distances.get(v)) {
+                                distances.put(v, distances.get(u) + other.get(v));
+
+                            }
+                        }
+                    }
+                }
+                for (Integer turnfalse : visited.keySet()) {
+                    if(visited.get(turnfalse) == false) {
+                        return -1;
+                    }
+                }
+                theLongestTimeArray.put(key, findTheLongestTime(distances, graph));
+
+            }
+
+            for(Integer searcher : theLongestTimeArray.keySet()) {
+                if(result < theLongestTimeArray.get(searcher)) {
+                    result = theLongestTimeArray.get(searcher);
+                }
+            }
+            return (int) Math.ceil(result / this.slowest);
+        }
+        else
+            return -1;
+    }
+
+    Integer minimumDistance(HashMap<Integer, Double> distances, HashMap<Integer, Boolean> visited, HashMap<Integer, HashMap<Integer, Double>> graph) {
+        // Initialize min value
+        double min = Double.MAX_VALUE;
+        Integer min_index = -1;
+
+        for (Integer key : graph.keySet()) {
+            if (visited.get(key) == false && distances.get(key) <= min) {
+                min = distances.get(key);
+                min_index = key;
+            }
+        }
+        return min_index;
+    }
+
+    Double findTheLongestTime(HashMap<Integer, Double> distances, HashMap<Integer, HashMap<Integer, Double>> graph) {
+        Double max = -(Double.MAX_VALUE);
+        for (Integer v : distances.keySet()) {
+            if (distances.get(v) != null) {
+                if(distances.get(v) > max && distances.get(v) != Double.MAX_VALUE)
+                    max = distances.get(v);
+            }
+        }
+        //System.out.println(max);
+        return max;
+    }
+}
+
+
+
